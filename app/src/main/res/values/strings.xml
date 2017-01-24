@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">Secret Santa</string>
+    <string name="instructive_labels_text">Enter a name and tap NEXT to add that person to the list, continue entering names and when finished tap NEXT then DONE.</string>
+    <string name="initial_text_in_dispensing_label">...</string>
+    <string name="text_on_Done_button">Done</string>
+    <string name="text_on_Next_button">Next</string>
+    <string name="enter_name_fields_hint_text">Enter Name</string>
+    <string name="enter_name_fields_initial_text"></string>
+    <string name="toastmsg_2nd_popup_after_a_finished_round">Press DONE again to reset the Secret Santa tool!</string>
+</resources>

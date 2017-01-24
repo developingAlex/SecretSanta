@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/activity_main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context="com.example.user1.secretsanta.MainActivity">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/instructive_labels_text" />
+    <EditText
+        android:id="@+id/enter_name_field"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:inputType="text"
+        android:hint="@string/enter_name_fields_hint_text"
+        android:text = "@string/enter_name_fields_initial_text">
+        <requestFocus />
+    </EditText>
+
+    <Button
+        android:id="@+id/NEXTButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:onClick="NEXTClicked"
+        android:text="@string/text_on_Next_button" />
+
+    <Button
+        android:id="@+id/DONEButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:onClick="DONEClicked"
+        android:text="@string/text_on_Done_button" />
+    <TextView
+        android:id="@+id/dispensingTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/initial_text_in_dispensing_label" />
+</LinearLayout>
