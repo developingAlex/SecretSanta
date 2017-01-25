@@ -22,22 +22,41 @@
         <requestFocus />
     </EditText>
 
-    <Button
-        android:id="@+id/NEXTButton"
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:id="@+id/buttonLayout"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:onClick="NEXTClicked"
-        android:text="@string/text_on_Next_button" />
+        android:orientation="horizontal"
+        tools:context="com.example.user1.secretsanta.MainActivity">
+
+        <Button
+            android:id="@+id/NEXTButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:onClick="NEXTClicked"
+            android:textAllCaps="false"
+            android:text="@string/text_on_Next_button" />
+
+        <Button
+            android:id="@+id/RESETButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:onClick="RESETClicked"
+            android:textAllCaps="false"
+            android:text="@string/text_on_Reset_button" />
+    </LinearLayout>
 
     <Button
         android:id="@+id/DONEButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:onClick="DONEClicked"
+        android:textAllCaps="false"
         android:text="@string/text_on_Done_button" />
     <TextView
         android:id="@+id/dispensingTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/initial_text_in_dispensing_label" />
+        android:text="@string/dispensing_label_initial_text" />
 </LinearLayout>

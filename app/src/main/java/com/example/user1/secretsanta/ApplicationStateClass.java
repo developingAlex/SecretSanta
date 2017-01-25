@@ -21,7 +21,7 @@ import java.util.Random;
  */
 public class ApplicationStateClass extends Application {
 
-    final boolean DEBUGGING = true;
+    final boolean DEBUGGING = false;
 
     // Constants for the stage variable:
     final int WRITING_DOWN_NAMES_FOR_THE_HAT = 0;
@@ -75,15 +75,15 @@ public class ApplicationStateClass extends Application {
         if (DEBUGGING) System.out.println("stage="+stage);
 
         if(name.length() == 0 ){
-            displayQuickToastMessage("Enter a name in the field.");
+            displayQuickToastMessage(getString(R.string.toastmsg_attempt_to_add_no_name));
         }else if( namesList.contains(name) ){
-            displayQuickToastMessage("cannot add the same name twice.");
+            displayQuickToastMessage(getString(R.string.toastmsg_attempt_to_add_name_again));
         }else{
             namesList.add(name);
             ((EditText) mainActivity.findViewById(R.id.enter_name_field)).setText("");
-            setDispensingText(dispensingText + "," + name);
+            setDispensingText(dispensingText + ", " + name);
             //lowerTextLabel.setText(lowerTextLabel.getText()+","+name);
-            if(namesList.size()>2){ //enable the Done button only once the user inputs the third person.
+            if( namesList.size() == 3 ){ //enable the Done button only once the user inputs the third person.
                 enableDoneButton(true);
             }
         }
@@ -92,7 +92,7 @@ public class ApplicationStateClass extends Application {
  * Resets the system state to that when initialised ready for a new round, also performs application
  * initialisation.
  *
-* @param    initialSetup    indicates if application creation or new round*/
+* @param    initialSetup    indicates if application creation (true) or new round (false)*/
     public void resetGame(boolean initialSetup){
         assert(mainActivity != null);
         namesList = new ArrayList<String>();
@@ -117,26 +117,25 @@ public class ApplicationStateClass extends Application {
     }
 
     /**
-     * called by mainActivity when it's created/redrawn.
+     * called by mainActivity when it's created/redrawn (screen rotates).
      * @param   mainActivitysCurrentInstance    the MainActivity object.
      * */
     public void updateInstance(Activity mainActivitysCurrentInstance){
         this.mainActivity = mainActivitysCurrentInstance;
 
-        //ensure the buttons are enabled appropriately:
+        //ensure the buttons and name entry edittext are enabled appropriately:
         ((Button) mainActivity.findViewById(R.id.DONEButton)).setEnabled(doneButtonsEnabledStatus);
         ((Button) mainActivity.findViewById(R.id.NEXTButton)).setEnabled(nextButtonsEnabledStatus);
+        ((EditText) mainActivity.findViewById(R.id.enter_name_field)).setEnabled(nameEntryFieldsEnabledStatus);
 
         //ensure the dispensing text which is dynamic is restored appropriately:
         ((TextView) mainActivity.findViewById(R.id.dispensingTextView)).setText(dispensingText);
-
-        //ensure the name entry field edit text is enabled appropriately:
-        ((EditText) mainActivity.findViewById(R.id.enter_name_field)).setEnabled(nameEntryFieldsEnabledStatus);
     }
 
 
     /**
-     * Performs the relevant action when the user presses the DONE button. If the user had just been
+     * Performs the relevant action depending on what stage we're upto when the user presses the
+     * DONE button. If the user had just been
      * entering names building up the list of people then the process of dispensing the results begins.
      * if the dispensing of results is already underway then it sets the text appropriately.
      * Finally when the last result has been dispensed, continual pressing of the DONE button will
@@ -145,26 +144,20 @@ public class ApplicationStateClass extends Application {
     public void doneButtonPressed(){
 
         assert(mainActivity != null);
-        if (stage == WRITING_DOWN_NAMES_FOR_THE_HAT){
-            if(namesList.size()>2) {
-                enableNextButton(false);//the time for entering of names has ended
-                enableNameEntryField(false);
-                stage = SHUFFLING_HAT;
-                //begin randomisation of partners.
-                int returnCode = RandomlyGeneratePartnershipsAndPopulatePartnersList();
-                while (returnCode == 1) {
-                    returnCode = RandomlyGeneratePartnershipsAndPopulatePartnersList();
-                }
-                if (returnCode == 0){
-                    stage = DISPENSING_RESULTS;
-                }
-            }else{
-                displayQuickToastMessage("You haven't entered 3 or more people yet.");
-            }
 
+        if (stage == WRITING_DOWN_NAMES_FOR_THE_HAT){
+            enableNextButton(false);//the time for entering of names has ended
+            enableNameEntryField(false);
+            stage = SHUFFLING_HAT;
+            //begin randomisation of partners.
+            RandomlyGeneratePartnershipsAndPopulatePartnersList();
+            stage = DISPENSING_RESULTS;
         }
-        if (stage == DISPENSING_RESULTS && uptoName < namesList.size()){ //use the value of variable 'uptoName' to determine which name to display
-            // next, initially this value is 0.
+
+        if(finishedRound ){
+            resetGame(false);
+        }else if (stage == DISPENSING_RESULTS && uptoName < namesList.size()){ //use the value of variable
+            // 'uptoName' to determine which name to display next, initially this value is 0.
 
             if (paperHasBeenUnwrappedAndRead){
                 if (uptoName < namesList.size()-1) {
@@ -181,28 +174,27 @@ public class ApplicationStateClass extends Application {
 
             if (uptoName == namesList.size()){
                 finishedRound = true;
+                displayQuickToastMessage(getString(R.string.toastmsg_1st_popup_after_a_finished_round));
             }
-
-        }
-        if(finishedRound && finishedPrompt == 2){
-            resetGame(false);
-        }
-        if(finishedRound && finishedPrompt == 1){
-            displayQuickToastMessage(getString(R.string.toastmsg_2nd_popup_after_a_finished_round));
-            setDispensingText("Finished! Press DONE once more to reset the Secret Santa tool if you want to run it again.");
-            finishedPrompt++;
-        }
-        if(finishedRound && finishedPrompt == 0){
-            displayQuickToastMessage("Finished!!!");
-            finishedPrompt++;
         }
     }
 
-
-    private int RandomlyGeneratePartnershipsAndPopulatePartnersList(){
-
+    /**
+     * Randomly assigns secret santas by building a list of the namelist's indexes in a shuffled
+     * order. that then represents the assignments, eg. nameslist is {alex, aaron, arnold}
+     * listOfPeoplesNamesAlreadyDrawnFromHat could become {aaron, arnold, alex}, here they are
+     * together:
+     * {alex, aaron, arnold} <-- nameslist (the person buying the present)
+     * {aaron, arnold, alex} <--- shuffled list (the person to buy a present for)
+     *
+     * so that means, alex has aaron, aaron has arnold and arnold has alex.
+     *
+     * operates on the global variables in this class, and should only be called if the namesList
+     * arraylist is at least 3 people full.
+     */
+    private void RandomlyGeneratePartnershipsAndPopulatePartnersList(){
+        assert(namesList.size() > 2);
         listOfPeoplesNamesAlreadyDrawnFromHat.clear();
-        boolean needToRetryFromScratch = false;
         ArrayList<Integer> listOfDrawnIndexes = new ArrayList<Integer>();
         ArrayList<Integer> listOfIndexesRemaining = new ArrayList<Integer>();
         int i = 0;
@@ -245,52 +237,26 @@ public class ApplicationStateClass extends Application {
                 }
                 System.out.println("contents of listOfDrawnIndexes:"+listToPrint);
             }
-            /*
-            * so if we have 3 indexes left in the 'hat' and they are 3, 5, 6.
-            * and our random 'draw' gives us a value of 2
-            * which isn't one of them, we should do 2%3=2 which evaluates to the 6 value.
-            * */
             int indexOfSecondLastPerson = namesList.size()-2;
             int indexOfLastPerson = namesList.size()-1;
-            boolean theLastPersonHasntYetBeenDrawnFromHat = !listOfDrawnIndexes.contains(indexOfLastPerson);
-            if(i == indexOfSecondLastPerson && theLastPersonHasntYetBeenDrawnFromHat){
+            boolean theLastPersonHasntYetBeenDrawnFromHat = !listOfDrawnIndexes.contains(indexOfLastPerson) && indexOfDrawnName != indexOfLastPerson;
+            boolean weAreUptoTheSecondLastPerson = (i == indexOfSecondLastPerson);
+            if(weAreUptoTheSecondLastPerson && theLastPersonHasntYetBeenDrawnFromHat){
              /* this will ensure that the last person to draw from the hat
                 is never left with only their own name left in the hat */
-                if(DEBUGGING) System.out.println("UPTO second last person and the last person hasn't been drawn from hat yet!");
-                if(DEBUGGING) System.out.println("indexOfDrawnName="+indexOfDrawnName);
                 indexOfDrawnName = indexOfLastPerson;
-                if(DEBUGGING) System.out.println("indexOfDrawnName="+indexOfDrawnName);
-                if(DEBUGGING) System.out.println("if indexOfDrawnName changed, we just prevented the situation where the last person left would have had no other options except themselves");
+                if(DEBUGGING) System.out.println("we just prevented the situation where the last name in the hat was also the name of the last person.");
             }
             assert (indexOfDrawnName < namesList.size());
             assert ( !listOfDrawnIndexes.contains(indexOfDrawnName) );
-            //boolean personHasntAlreadyBeenDrawn = ( !listOfDrawnIndexes.contains(indexOfDrawnName) );
-            boolean personDidntDrawThemselves = ( i != indexOfDrawnName );
             assert (i != indexOfDrawnName);
-            //if(personHasntAlreadyBeenDrawn && personDidntDrawThemselves){
-            if(personDidntDrawThemselves){
-                listOfIndexesRemaining.remove( (Integer) indexOfDrawnName);
-                listOfDrawnIndexes.add(indexOfDrawnName);
-                listOfPeoplesNamesAlreadyDrawnFromHat.add(namesList.get(indexOfDrawnName));
-                i++;
-            }else{
-                if (DEBUGGING) System.out.println("Person got themselves so drawing another name from the 'hat'");
-                numberOfFailedAttemptsToAssignPartner++;
-                if(numberOfFailedAttemptsToAssignPartner > R.integer.maximum_attempts_resulting_in_person_getting_themselves_before_complete_retry){
-                    needToRetryFromScratch = true;
-                    break;
-                }
-            }
+            listOfIndexesRemaining.remove( (Integer) indexOfDrawnName);
+            listOfDrawnIndexes.add(indexOfDrawnName);
+            listOfPeoplesNamesAlreadyDrawnFromHat.add(namesList.get(indexOfDrawnName));
+            i++;
 
         }
-        if (needToRetryFromScratch){
-            if (DEBUGGING) System.err.println("Attempt to build partners list failed, resulted in last person getting themselves");
-            //this should never run since the introduction of the test to ensure that if we're drawing for the second last person
-            // and the last person still hasn't been drawn, that the second last person 'draws' the last person.
-            return 1;
-        }
         if (DEBUGGING) System.out.println("Successfully generated random partnerships");
-        return 0;
     }
 
 
