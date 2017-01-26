@@ -22,6 +22,9 @@ public class MainActivity extends AppCompatActivity {
         currentState.updateInstance(this);
     }
 
+    public void DRAWClicked(View view){
+        currentState.redraw();
+    }
 
     public void NEXTClicked(View view){ currentState.addNameToHat(((EditText) findViewById(R.id.enter_name_field)).getText().toString()); }
 

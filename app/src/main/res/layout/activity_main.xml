@@ -39,6 +39,14 @@
             android:text="@string/text_on_Next_button" />
 
         <Button
+            android:id="@+id/DRAWButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:onClick="DRAWClicked"
+            android:textAllCaps="false"
+            android:text="@string/text_on_Draw_Again_button" />
+
+        <Button
             android:id="@+id/RESETButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

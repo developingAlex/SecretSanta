@@ -33,7 +33,9 @@ public class ApplicationStateClass extends Application {
     String dispensingText; /*holds the current label being used on the
     dispensing text label (the label that shows the list of names being built and also reads the
     results to each person.  */
-    boolean doneButtonsEnabledStatus,nextButtonsEnabledStatus,nameEntryFieldsEnabledStatus; /*the
+    boolean doneButtonsEnabledStatus,nextButtonsEnabledStatus,
+            nameEntryFieldsEnabledStatus,resetButtonsEnabledStatus,
+            redrawButtonsEnabledStatus; /*the
     enabled status of the next and done buttons and the name entry field, for intuitive user
     feedback these elements are at times disabled visually indicating to the user that it is
     currently an inappropriate time to use them. */
@@ -86,6 +88,7 @@ public class ApplicationStateClass extends Application {
             if( namesList.size() == 3 ){ //enable the Done button only once the user inputs the third person.
                 enableDoneButton(true);
             }
+            enableResetButton(true);
         }
     }
 /**
@@ -106,8 +109,12 @@ public class ApplicationStateClass extends Application {
             doneButtonsEnabledStatus = false; //will be applied when MainActivity runs its onCreate()
             nextButtonsEnabledStatus = true; //will be applied when MainActivity runs its onCreate()
             dispensingText = "..."; //will be applied when MainActivity runs its onCreate()
-            nameEntryFieldsEnabledStatus = true;
+            nameEntryFieldsEnabledStatus = true;//will be applied when MainActivity runs its onCreate()
+            resetButtonsEnabledStatus = false;//will be applied when MainActivity runs its onCreate()
+            redrawButtonsEnabledStatus = false;//will be applied when MainActivity runs its onCreate()
         }else {
+            enableResetButton(false);
+            enableRedrawButton(false);
             enableDoneButton(false);
             enableNextButton(true);
             enableNameEntryField(true);
@@ -125,6 +132,8 @@ public class ApplicationStateClass extends Application {
 
         //ensure the buttons and name entry edittext are enabled appropriately:
         ((Button) mainActivity.findViewById(R.id.DONEButton)).setEnabled(doneButtonsEnabledStatus);
+        ((Button) mainActivity.findViewById(R.id.DRAWButton)).setEnabled(redrawButtonsEnabledStatus);
+        ((Button) mainActivity.findViewById(R.id.RESETButton)).setEnabled(resetButtonsEnabledStatus);
         ((Button) mainActivity.findViewById(R.id.NEXTButton)).setEnabled(nextButtonsEnabledStatus);
         ((EditText) mainActivity.findViewById(R.id.enter_name_field)).setEnabled(nameEntryFieldsEnabledStatus);
 
@@ -149,13 +158,17 @@ public class ApplicationStateClass extends Application {
             enableNextButton(false);//the time for entering of names has ended
             enableNameEntryField(false);
             stage = SHUFFLING_HAT;
-            //begin randomisation of partners.
+        }
+        if (stage == SHUFFLING_HAT){
             RandomlyGeneratePartnershipsAndPopulatePartnersList();
             stage = DISPENSING_RESULTS;
+            enableRedrawButton(true);
+            if (DEBUGGING) writeOutResults();
         }
 
         if(finishedRound ){
-            resetGame(false);
+            enableDoneButton(false);
+            setDispensingText("...");
         }else if (stage == DISPENSING_RESULTS && uptoName < namesList.size()){ //use the value of variable
             // 'uptoName' to determine which name to display next, initially this value is 0.
 
@@ -216,7 +229,16 @@ public class ApplicationStateClass extends Application {
             //int indexOfDrawnName = listOfIndexesRemaining.get( randomIndex % listOfIndexesRemaining.size() );
             int indexOfDrawnName = listOfIndexesRemaining.get( randomIndex );
             if (indexOfDrawnName == i){ //they drew themselves...
-                indexOfDrawnName = listOfIndexesRemaining.get( (randomIndex + 1)%listOfIndexesRemaining.size() ); //...so just give them what comes next
+                if(DEBUGGING) System.out.println("person drew themselves..");
+                ArrayList<Integer> newTempListThatDoesntIncludeThePersonDrawing = (ArrayList<Integer>) listOfIndexesRemaining.clone(); //so copy the contents of the hat
+                if(DEBUGGING) System.out.println("the hat in its current state has been cloned..");
+                newTempListThatDoesntIncludeThePersonDrawing.remove(randomIndex); //and remove their name from that copy
+                if(DEBUGGING) System.out.println("the cloned hat has had the current persons name removed from it..");
+                randomIndex = randomGenerator.nextInt(newTempListThatDoesntIncludeThePersonDrawing.size()); //and get them to draw again..
+                indexOfDrawnName = newTempListThatDoesntIncludeThePersonDrawing.get( (randomIndex ) );
+                newTempListThatDoesntIncludeThePersonDrawing = null;
+                if(DEBUGGING) System.out.println(namesList.get(i)+" has drawn again from the hat that doesn't include their name., they got "+namesList.get(indexOfDrawnName));
+                //This originally just gave them the next person in the list instead of creating a whole new copy of the hat.
             }
             if(DEBUGGING) System.out.println("indexOfDrawnName="+indexOfDrawnName);
             if(DEBUGGING) System.out.println("listOfIndexesRemaining.size()="+listOfIndexesRemaining.size());
@@ -259,6 +281,27 @@ public class ApplicationStateClass extends Application {
         if (DEBUGGING) System.out.println("Successfully generated random partnerships");
     }
 
+    public void redraw(){
+        if(stage == this.DISPENSING_RESULTS) { //only redraw if we've already begun drawing names
+            enableDoneButton(false);
+            assert (mainActivity != null);
+            listOfPeoplesNamesAlreadyDrawnFromHat = new ArrayList<String>();
+            stage = SHUFFLING_HAT;
+            uptoName = 0;
+            paperHasBeenUnwrappedAndRead = false;
+            finishedRound = false;
+            finishedPrompt = 0;
+
+            enableNextButton(false);
+            enableNameEntryField(false);
+            setDispensingText("...");
+            if (DEBUGGING) System.out.println("redrawing names again.");
+
+            doneButtonPressed(); //emulate the done button being pressed, to kick off the stage
+            // where we're dispensing the results..
+            enableDoneButton(true);
+        }
+    }
 
 
     /**
@@ -310,6 +353,16 @@ public class ApplicationStateClass extends Application {
         ((EditText) mainActivity.findViewById(R.id.enter_name_field)).setEnabled(nameEntryFieldsEnabledStatus);
     }
 
+    public void enableResetButton(boolean enabled){
+        resetButtonsEnabledStatus = enabled;
+        ((Button) mainActivity.findViewById(R.id.RESETButton)).setEnabled(resetButtonsEnabledStatus);
+    }
+
+    public void enableRedrawButton(boolean enabled){
+        redrawButtonsEnabledStatus = enabled;
+        ((Button) mainActivity.findViewById(R.id.DRAWButton)).setEnabled(redrawButtonsEnabledStatus);
+    }
+
     /**
      * Sets the dispensing text label (the label that displays the list of names entered and then
      * also acts as the label that tells people who they have) to the value provided.
@@ -328,5 +381,25 @@ public class ApplicationStateClass extends Application {
         Toast.makeText(this.getBaseContext(), msg, Toast.LENGTH_LONG).show();
     }
 
+    /**
+     * Only really used for debugging information only
+     */
+    private void writeOutResults(){
+        int j = 0;
+        String listToPrint = "";
+        while (j<namesList.size()){
+            listToPrint += namesList.get(j)+",";
+            j++;
+        }
+        System.out.println("names   :"+listToPrint);
+
+        j = 0;
+        listToPrint = "";
+        while (j<listOfPeoplesNamesAlreadyDrawnFromHat.size()){
+            listToPrint += listOfPeoplesNamesAlreadyDrawnFromHat.get(j)+",";
+            j++;
+        }
+        System.out.println("partners:"+listToPrint);
+    }
 }
 

@@ -4,7 +4,8 @@
     <string name="dispensing_label_initial_text">...</string>
     <string name="text_on_Done_button">Done</string>
     <string name="text_on_Next_button">Next</string>
-    <string name="text_on_Reset_button">Reset</string>
+    <string name="text_on_Reset_button">Complete Reset</string>
+    <string name="text_on_Draw_Again_button">Draw again</string>
     <string name="enter_name_fields_hint_text">Enter Name</string>
     <string name="enter_name_fields_initial_text"></string>
     <string name="toastmsg_1st_popup_after_a_finished_round">Finished!</string>
